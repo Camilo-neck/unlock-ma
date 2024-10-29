@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:myapp/services/services.dart';
 
 class BookingPage extends StatefulWidget {
@@ -12,8 +13,10 @@ class BookingPage extends StatefulWidget {
 }
 
 class _BookingPageState extends State<BookingPage> {
+  final LocalAuthentication _auth = LocalAuthentication();
   String event_name = '';
   String device_name = '';
+  bool _isAuthenticated = false;
   @override
   void initState() {
     super.initState();
@@ -46,8 +49,36 @@ class _BookingPageState extends State<BookingPage> {
 
   @override
   Widget build(BuildContext context) {
+    Future<bool> checkAuthenticated() async {
+      if (!_isAuthenticated) {
+        final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
+        if (canAuthenticateWithBiometrics) {
+          try {
+            final bool didAuthenticate = await _auth.authenticate(
+              localizedReason: 'Please authenticate to open the door',
+              options: const AuthenticationOptions(
+                biometricOnly: true,
+                stickyAuth: true,
+                useErrorDialogs: true,
+              ),
+            );
+            setState(() {
+              _isAuthenticated = didAuthenticate;
+            });
+          } catch (e) {
+            print('Error using biometrics: $e');
+          }
+        }
+      }
+      return _isAuthenticated;
+    }
+
     void openDoor() async {
       // Make openDoor async
+      await checkAuthenticated();
+      if (!_isAuthenticated) {
+        return;
+      }
       try {
         var response = await openDoorService(widget.bookingId);
 
@@ -73,6 +104,10 @@ class _BookingPageState extends State<BookingPage> {
       } catch (error) {
         print('Error opening door: $error');
         // Handle error, maybe show a message to the user
+      } finally {
+        setState(() {
+          _isAuthenticated = false;
+        });
       }
     }
 
