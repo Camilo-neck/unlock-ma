@@ -19,7 +19,7 @@ class _LandingPageState extends State<LandingPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          context.go('/booking/19b1ed2e-0fb9-4013-8875-fa3d7f113854');
+          context.go('/booking/21a3a049-a2a7-4d17-a4e2-2338358b6fac');
         },
         tooltip: 'Go to Booking',
         child: const Icon(Icons.add),
