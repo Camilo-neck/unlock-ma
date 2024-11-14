@@ -39,9 +39,6 @@ class _AppPageState extends State<AppPage> {
         );
         // Handle error, maybe show a message to the user
       } else {
-        // Request successful
-        print('Info Retrieved');
-        print(jsonDecode(response.body));
         setState(() {
           bookings = jsonDecode(response.body);
         });
@@ -68,7 +65,6 @@ class _AppPageState extends State<AppPage> {
           _redirecting = true;
           GoRouter.of(context).go('/');
         }
-        print('Session: ${session!.accessToken}');
         await _loadBookings(session!.accessToken);
       },
       onError: (error) {
