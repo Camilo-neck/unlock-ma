@@ -1,19 +1,21 @@
-import 'dart:io';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:myapp/utils/utils.dart';
 
-Future<http.Response> openDoorService(String token, String bookingId) async {
+import 'dart:io';
+
+Future<http.Response> getBookingsService(String token) async {
   var uri = Uri.https(
     'unlock-rp.eastus.azurecontainer.io',
-    "/bookings/use/$bookingId"
+    "/bookings/me"
   );
 
+  // Bypass SSL certificate verification
   HttpClient client = HttpClient()
     ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
 
-  HttpClientRequest request = await client.postUrl(uri);
+  HttpClientRequest request = await client.getUrl(uri);
   request.headers.set('Content-Type', 'application/json');
   request.headers.set('Authorization', 'Bearer $token');
 

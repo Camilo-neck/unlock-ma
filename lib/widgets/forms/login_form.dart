@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
+import 'package:myapp/pages/landing_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -9,20 +13,96 @@ class LoginForm extends StatefulWidget {
 }
 
 class _LoginFormState extends State<LoginForm> {
+  bool _isLoading = false;
+  bool _redirecting = false;
   final _formKey = GlobalKey<FormState>();
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
-  late SharedPreferences prefs;
+  late final StreamSubscription<AuthState> _authStateSubscription;
   bool _obscurePassword = true;
+
+    Future<void> _signIn() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      await Supabase.instance.client.auth.signInWithPassword(password: passwordController.text, email: usernameController.text);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Inicio de sesión exitoso'),
+          ),
+        );
+        usernameController.clear();
+        passwordController.clear();
+      }
+    } on AuthException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.message),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+      print('Error: $error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unexpected error occurred'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   void initState() {
+    _authStateSubscription = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (data) {
+        if (_redirecting) return;
+        final session = data.session;
+        print('Session: $session');
+        if (session != null) {
+          _redirecting = true;
+          GoRouter.of(context).go('/');
+        }
+      },
+      onError: (error) {
+        if (error is AuthException) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error.message),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Unexpected error occurred'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      },
+    );
     super.initState();
-    initSharedPref();
   }
 
-  void initSharedPref() async {
-    prefs = await SharedPreferences.getInstance();
+  @override
+  void dispose() {
+    usernameController.dispose();
+    passwordController.dispose();
+    _authStateSubscription.cancel();
+    super.dispose();
   }
 
   @override
@@ -103,7 +183,7 @@ class _LoginFormState extends State<LoginForm> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () async {
+              onPressed: _isLoading ? null : () async {
                 if (usernameController.text.isEmpty ||
                     passwordController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -112,7 +192,8 @@ class _LoginFormState extends State<LoginForm> {
                     ),
                   );
                 } else {
-                  print('Empizo');
+                  print('Empiezo');
+                  await _signIn();
                   print('login');
                 }
               },

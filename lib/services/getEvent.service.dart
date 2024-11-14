@@ -1,11 +1,10 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:myapp/utils/utils.dart';
 
 import 'dart:io';
 
-Future<http.Response> getBookingService(String bookingId) async {
+Future<http.Response> getBookingService(String token, String bookingId) async {
   print('getBookingService: $bookingId');
   var uri = Uri.https(
     'unlock-rp.eastus.azurecontainer.io',

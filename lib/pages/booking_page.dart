@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:myapp/services/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BookingPage extends StatefulWidget {
   final String bookingId;
@@ -17,16 +20,47 @@ class _BookingPageState extends State<BookingPage> {
   String event_name = '';
   String device_name = '';
   bool _isAuthenticated = false;
+  
+  bool _redirecting = false;
+  late final StreamSubscription<AuthState> _authStateSubscription;
+
   @override
   void initState() {
+    _authStateSubscription = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (data) async {
+        if (_redirecting) return;
+        final session = data.session;
+        if (session == null) {
+          _redirecting = true;
+          GoRouter.of(context).go('/');
+        }
+        await getEvent(session!.accessToken);
+      },
+      onError: (error) {
+        if (error is AuthException) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error.message),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Unexpected error occurred'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      },
+    );
     super.initState();
-    getEvent();
   }
 
-  Future<void> getEvent() async {
+  Future<void> getEvent(String token) async {
     try {
-      var response = await getBookingService(widget.bookingId);
-
+      
+      var response = await getBookingService(token, widget.bookingId);
       if (response.statusCode != 200) {
         print('HTTP request failed with status: ${response.statusCode}');
         print('Response body: ${response.body}');
@@ -80,7 +114,8 @@ class _BookingPageState extends State<BookingPage> {
         return;
       }
       try {
-        var response = await openDoorService(widget.bookingId);
+        String token = Supabase.instance.client.auth.currentSession!.accessToken;
+        var response = await openDoorService(token, widget.bookingId);
 
         if (response.statusCode != 200) {
           print('HTTP request failed with status: ${response.statusCode}');
@@ -114,10 +149,16 @@ class _BookingPageState extends State<BookingPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(event_name),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            GoRouter.of(context).go('/app');
+          },
+        ),
       ),
       body: Center(
         child: FilledButton(
-            onPressed: openDoor, child: Text("Acceder a $device_name")),
+            onPressed:  openDoor, child: Text("Acceder a $device_name")),
       ),
     );
   }
