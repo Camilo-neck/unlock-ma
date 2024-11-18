@@ -18,19 +18,22 @@ final GoRouter _router = GoRouter(routes: <RouteBase>[
   GoRoute(
       path: '/',
       builder: (BuildContext context, GoRouterState state) =>
-          const LandingPage()),
-  GoRoute(path: '/login',
-      builder: (BuildContext context, GoRouterState state) =>
-          const LoginPage()
-  ),
-  GoRoute(path: '/app',
-      builder: (BuildContext context, GoRouterState state) =>
-          const AppPage()
-  ),
-  GoRoute(
-    path: '/booking/:bookingId',
-    builder: (BuildContext context, GoRouterState state) =>
-        BookingPage(bookingId: state.pathParameters['bookingId']!),
+          const LandingPage(),
+      routes: <RouteBase>[
+        GoRoute(path: 'login',
+            builder: (BuildContext context, GoRouterState state) =>
+                const LoginPage()
+        ),
+        GoRoute(path: 'app',
+            builder: (BuildContext context, GoRouterState state) =>
+                const AppPage()
+        ),
+        GoRoute(
+          path: 'booking/:bookingId',
+          builder: (BuildContext context, GoRouterState state) =>
+              BookingPage(bookingId: state.pathParameters['bookingId']!),
+        ),
+      ]
   ),
 ]);
 

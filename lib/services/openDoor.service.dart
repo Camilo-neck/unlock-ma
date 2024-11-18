@@ -6,12 +6,11 @@ import 'package:myapp/utils/utils.dart';
 
 Future<http.Response> openDoorService(String token, String bookingId) async {
   var uri = Uri.https(
-    'unlock-rp.eastus.azurecontainer.io',
+    'unlock-backend.vercel.app',
     "/bookings/use/$bookingId"
   );
 
-  HttpClient client = HttpClient()
-    ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  HttpClient client = HttpClient();
 
   HttpClientRequest request = await client.postUrl(uri);
   request.headers.set('Content-Type', 'application/json');

@@ -7,13 +7,12 @@ import 'dart:io';
 
 Future<http.Response> getBookingsService(String token) async {
   var uri = Uri.https(
-    'unlock-rp.eastus.azurecontainer.io',
+    'unlock-backend.vercel.app',
     "/bookings/me"
   );
 
   // Bypass SSL certificate verification
-  HttpClient client = HttpClient()
-    ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  HttpClient client = HttpClient();
 
   HttpClientRequest request = await client.getUrl(uri);
   request.headers.set('Content-Type', 'application/json');
